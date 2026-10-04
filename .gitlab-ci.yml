@@ -21,6 +21,7 @@ test-windows:
 build:
   stage: build
   image: python:3.12-slim
+  needs: [test]                # do not wait for the slow Windows runner
   script:
     - pip install --quiet build
     - python -m build
