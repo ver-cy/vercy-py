@@ -21,7 +21,7 @@ classifiers = [
 
 [project.urls]
 Homepage = "https://ver.cy/overlay/"
-Source = "https://github.com/ver-cy/vercy-py"
+Source = "https://gitlab.com/behind.software.prod/vercy-py"
 
 [project.scripts]
 vercy = "vercy.cli:main"
