@@ -1,0 +1,30 @@
+{"attribute": "arr", "value": "committed subscription value recognised over the next twelve months, excluding one-off services"}
+{"attribute": "arr", "value": "committed subscription value recognised over the next twelve months, excluding one-off services and excluding customers in notice period"}
+{"attribute": "arr", "value": "total value of contracts signed in the last twelve months, including one-off services"}
+{"attribute": "active_customer", "value": "a customer with a live contract on the reporting date"}
+{"attribute": "active_customer", "value": "a customer that has opened at least one ticket in the last ninety days"}
+{"attribute": "churn", "value": "customers whose contract ended in the period and was not renewed within thirty days"}
+{"attribute": "incident_severity_1", "value": "an outage affecting more than one customer with no workaround"}
+{"attribute": "incident_severity_1", "value": "an outage affecting any customer with no workaround, or any confirmed data loss"}
+{"attribute": "incident_severity_1", "value": "an outage breaching the uptime term of a signed contract"}
+{"attribute": "contractor", "value": "a person engaged under a services agreement with no employment relationship"}
+{"attribute": "contractor", "value": "any person invoicing the company who is not on payroll"}
+{"attribute": "lead_time", "value": "working days from a confirmed order to despatch from the works"}
+{"attribute": "lead_time", "value": "calendar days from the customer's purchase order to delivery on site"}
+{"attribute": "qualified_lead", "value": "a lead with a named budget holder and a stated timeframe"}
+{"attribute": "data_retention", "value": "customer records are kept for seven years after the contract ends"}
+{"attribute": "data_retention", "value": "customer records are kept for five years after the contract ends"}
+{"attribute": "data_retention", "value": "customer records are kept for seven years after the contract ends"}
+{"attribute": "arr", "value": "12.4m EUR"}
+{"attribute": "arr", "value": "9.8m EUR"}
+{"attribute": "active_customer", "value": "318"}
+{"attribute": "active_customer", "value": "402"}
+{"attribute": "churn", "value": "6.1%"}
+{"attribute": "lead_time", "value": "23 working days"}
+{"attribute": "lead_time", "value": "41 calendar days"}
+{"attribute": "incident_severity_1", "value": "7"}
+{"attribute": "salary_band", "value": "band 4 is 78k to 96k EUR"}
+{"attribute": "litigation", "value": "dispute with Orlin Supply, filed 2026-05-12"}
+{"attribute": "customer_health", "value": "Meridian Labs flagged at risk of non-renewal"}
+{"attribute": "acquisition", "value": "early talks to acquire Pell Optics"}
+{"attribute": "headcount_plan", "value": "engineering to grow by 11 in 2027"}

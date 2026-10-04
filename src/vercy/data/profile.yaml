@@ -1,0 +1,271 @@
+# Vercy Governance Overlay
+# An additive profile: the fields that the published benchmarks found to carry
+# the capabilities a memory store is actually asked for. It does not replace a
+# store. Every effect size below is read from the result.json of the study that
+# measured it.
+overlay: vercy-governance-overlay
+version: "1.0"
+license: Apache-2.0
+status: Working Draft
+additive: true
+replaces_store: false
+levels:
+  - level: 1
+    name: "Level 1 - time and identity"
+    unlocks: "Answers questions about any date, and lets an update name what it replaces."
+  - level: 2
+    name: "Level 2 - provenance and authority"
+    unlocks: "Resolves disagreement by rule instead of by guess, and routes a change request to the party accountable for it."
+  - level: 3
+    name: "Level 3 - disclosure"
+    unlocks: "Decides what may cross a boundary without either leaking or over-refusing."
+  - level: 0
+    name: "Experimental"
+    unlocks: "Proposed on the strength of a measured blind spot, not yet tested."
+fields:
+  - id: record_id
+    level: 1
+    requirement: "MUST"
+    definition: "A stable identifier for the record itself, short enough to be written by hand."
+    evidence:
+      study: CMB
+      measure: "closing the right record on a restatement"
+      without_field_percent: 0.0
+      with_field_percent: 100.0
+  - id: valid_from
+    level: 1
+    requirement: "MUST"
+    definition: "The date from which the statement was true. Not the date it was captured."
+    evidence:
+      study: PDB
+      measure: "questions about a past date"
+      without_field_percent: 0.0
+      with_field_percent: 100.0
+  - id: valid_to
+    level: 1
+    requirement: "MUST"
+    definition: "The date after which it stopped being true. The field must be present; null means it still holds."
+    evidence:
+      study: PDB
+      measure: "spotting an expired record"
+      without_field_percent: 20.0
+      with_field_percent: 100.0
+  - id: source
+    level: 2
+    requirement: "MUST"
+    definition: "Where the statement came from, as an identifier that can be followed."
+    evidence:
+      study: PDB
+      measure: "resolving two records that disagree"
+      without_field_percent: 33.3
+      with_field_percent: 100.0
+  - id: concept_owner
+    level: 2
+    requirement: "MUST"
+    definition: "The single party accountable for what the concept means. One per concept."
+    evidence:
+      study: CMB
+      measure: "sending a change request to the right owner"
+      without_field_percent: 80.0
+      with_field_percent: 100.0
+  - id: owner_role
+    level: 2
+    requirement: "SHOULD"
+    definition: "The accountable role inside that party, so a request reaches a person."
+    evidence:
+      study: CMB
+      measure: "naming who is accountable"
+      without_field_percent: 68.8
+      with_field_percent: 100.0
+  - id: conflict_policy
+    level: 2
+    requirement: "MUST"
+    definition: "One rule, stated once per store, for choosing between records that cover the same date and disagree."
+    evidence:
+      study: CMB
+      measure: "deciding which of two live records stands"
+      without_field_percent: 33.3
+      with_field_percent: 100.0
+  - id: applies_to
+    level: 2
+    requirement: "MUST on any record that states a rule"
+    definition: "The question classes the rule governs. A rule with no stated scope silently governs more than its author meant."
+    evidence:
+      study: SGB
+      measure: "counterparty-facing questions, federation arm"
+      without_field_percent: 58.3
+      with_field_percent: 70.8
+  - id: does_not_apply_to
+    level: 2
+    requirement: "MUST on any record that states a rule"
+    definition: "The question classes the rule explicitly does not govern. Written separately because a reader cannot infer the negative from the positive."
+    evidence:
+      study: SGB
+      measure: "internal questions under the same federation rule"
+      without_field_percent: 79.2
+      with_field_percent: 83.3
+  - id: release_to
+    level: 3
+    requirement: "MUST where any record is restricted"
+    definition: "The parties permitted to read this record. Absence of the field is not permission."
+    evidence:
+      study: CMB
+      measure: "releasing what a requester is entitled to"
+      without_field_percent: 59.1
+      with_field_percent: 100.0
+      critical_errors_without: 2
+      critical_errors_with: 0
+  - id: supersedes
+    level: 3
+    requirement: "SHOULD"
+    definition: "The identifier of the record this one replaces, so an update never has to be expressed by editing history."
+    evidence:
+      study: PDB
+      measure: "a complete, well-formed update"
+      without_field_percent: 0.0
+      with_field_percent: 66.7
+  - id: expected_concepts
+    level: 0
+    requirement: "EXPERIMENTAL"
+    definition: "A register of the concepts the store is meant to hold, so that a concept missing altogether becomes detectable. Tested once, in a 60-call experiment published beside this profile: the absent concept went from 1 of 3 detections to 3 of 3 with no change in false alarms, but only two of six gaps moved, so the exact sign test over the family is p = 0.5."
+    evidence:
+      study: R5
+      measure: "detecting a concept absent from the catalogue"
+      without_field_percent: 33.3
+      with_field_percent: 100.0
+operation:
+  id: supersede
+  rule: "Write one new record. Set its valid_from to the date the new statement begins. Set its supersedes to the record_id it replaces. Do not edit the superseded record and do not compute an end date for it."
+  derivation: "The end of a superseded interval is derived at read time: a record is in force on a date when it covers that date and no record superseding it has a valid_from on or before that date."
+  rationale: "Both benchmarks produced the correct new value on every scenario and the wrong boundary date on a third to a fifth of them. Deriving the boundary removes the step that failed."
+  incorrect: "Editing D-802 to set valid_to, or writing valid_to as 2026-09-30 by hand. Both express the same intent and both are where the measured errors occurred."
+  example:
+    superseded:
+      record_id: "D-802"
+      concept: "data_retention"
+      value: "customer records are kept for five years after the contract ends"
+      valid_from: "2026-06-01"
+      valid_to: null
+      source: "LEG-POL-04"
+      concept_owner: "legal"
+      supersedes: "D-801"
+    new_record:
+      record_id: "D-806"
+      concept: "data_retention"
+      value: "customer records are kept for three years after the contract ends"
+      valid_from: "2026-10-01"
+      valid_to: null
+      source: "LEG-POL-06"
+      concept_owner: "legal"
+      supersedes: "D-802"
+serialisation:
+  id: compact-line
+  field_order: [record_id, valid_from, valid_to, source, concept_owner, owner_role, supersedes, release_to, value]
+  rule: "One record per line, fields in the fixed order above, separated by a vertical bar. An empty field means absent; a tilde in valid_to means the interval is open."
+  measured_on: "the published reference store, 31 records"
+  json_lines_chars: 6064
+  compact_chars: 1860
+  saving_percent: 69.3
+  example: "D-101|2025-01-01|2026-03-31|FIN-POL-04|finance|Head of Finance"
+selection:
+  id: two-stage
+  rule: "Stage one, the agent selects the minimal set of records the question needs. Stage two, the question is answered from that set alone."
+  measured: "In the assembly track of the personal dimension benchmark selection recalled every needed record, chose 1.2 records out of 41, and reduced the supplied context from 10332 to 473 characters with no measurable change in accuracy (p = 0.34)."
+  caution: "The reduction is measured; a gain in accuracy is not. Do not claim one."
+mappings:
+  - target: bitemporal_graph
+    name: "Bi-temporal knowledge graph"
+    note: "Fact edges carrying valid-at and invalid-at beside the episode they came from. Modelled on the documented shape of Zep and its Graphiti engine."
+    fields:
+      record_id: "edge uuid"
+      valid_from: "valid_at"
+      valid_to: "invalid_at"
+      source: "the episodic node the edge was extracted from"
+      concept_owner: "add: OWNED_BY edge from the entity to a party node"
+      owner_role: "add: role attribute on that OWNED_BY edge"
+      conflict_policy: "add: one graph-level property, or a single policy node"
+      applies_to: "add: attribute on the rule edge, or SCOPES edges to entity classes"
+      does_not_apply_to: "add: EXCLUDES edges from the rule edge"
+      release_to: "add: VISIBLE_TO edges, or a list attribute on the fact edge"
+      supersedes: "add: SUPERSEDES edge between fact edges"
+      expected_concepts: "add: entity nodes marked as expected but unpopulated"
+  - target: vector_memory
+    name: "Vector memory with timestamps"
+    note: "Extracted memory strings with a write timestamp and filterable metadata. Modelled on the documented shape of a vector-first store such as Mem0."
+    fields:
+      record_id: "memory id"
+      valid_from: "add: metadata field, distinct from the created-at timestamp"
+      valid_to: "add: metadata field"
+      source: "metadata field"
+      concept_owner: "add: metadata field"
+      owner_role: "add: metadata field"
+      conflict_policy: "add: one pinned memory, or application configuration"
+      applies_to: "add: metadata list on the memory holding the rule"
+      does_not_apply_to: "add: metadata list, kept separate from applies_to"
+      release_to: "add: metadata list, applied as a retrieval filter"
+      supersedes: "add: metadata field holding the prior memory id"
+      expected_concepts: "add: a separate register, not a memory"
+  - target: catalogue
+    name: "Data catalogue or business glossary"
+    note: "A governed term set beside the store. Modelled on the shape catalogue vendors such as Atlan or Collibra position next to a memory graph."
+    fields:
+      record_id: "term or asset identifier"
+      valid_from: "add: usually only the asset has versions, the statement does not"
+      valid_to: "add: same"
+      source: "lineage link to the source asset"
+      concept_owner: "owner field, native"
+      owner_role: "steward or accountable role, native"
+      conflict_policy: "add: a policy document linked from the glossary"
+      applies_to: "policy scope, native in most catalogues"
+      does_not_apply_to: "add: catalogues usually state inclusion only"
+      release_to: "classification and purpose policies, native"
+      supersedes: "term version history, native"
+      expected_concepts: "add: a list of required terms"
+  - target: documents
+    name: "Wiki or document store"
+    note: "Team pages written by people. Carrying the overlay in the sentence is enough: in the collaborative benchmark a wiki doing exactly this matched the structured representation."
+    fields:
+      record_id: "a short tag written in the line, for example [D-102]"
+      valid_from: "stated in the sentence"
+      valid_to: "stated in the sentence"
+      source: "named in the sentence"
+      concept_owner: "a page listing who owns what"
+      owner_role: "the role named on that page"
+      conflict_policy: "a page stating how disagreements are settled"
+      applies_to: "the sentence says which questions the rule governs"
+      does_not_apply_to: "a second sentence saying what it does not govern"
+      release_to: "stated in the line that holds the restricted statement"
+      supersedes: "the tag of the superseded line, named in the new line"
+      expected_concepts: "a checklist page"
+  - target: relational
+    name: "Relational table"
+    note: "One row per statement. The overlay is nine columns and one policy row."
+    fields:
+      record_id: "primary key"
+      valid_from: "date column"
+      valid_to: "nullable date column"
+      source: "foreign key to a source table"
+      concept_owner: "foreign key to a party table"
+      owner_role: "column on the party table"
+      conflict_policy: "one row in a policy table, referenced by the store"
+      applies_to: "join table of rule to question class"
+      does_not_apply_to: "the same join table with an excluded flag"
+      release_to: "join table of record to party"
+      supersedes: "self-referencing foreign key"
+      expected_concepts: "a table of required concepts"
+  - target: dimension
+    name: "Vercy Dimension"
+    note: "The native carrier. Present here so the overlay can be read as a subset of it rather than as a separate thing."
+    fields:
+      record_id: "id"
+      valid_from: "valid_from"
+      valid_to: "valid_to"
+      source: "source"
+      concept_owner: "concept_owner"
+      owner_role: "owner_role"
+      conflict_policy: "conflict_policy"
+      applies_to: "applies_to"
+      does_not_apply_to: "does_not_apply_to"
+      release_to: "release_to"
+      supersedes: "supersedes"
+      expected_concepts: "not yet in the specification"

@@ -1,0 +1,33 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "vercy"
+version = "0.1.0"
+description = "Check agent memory against the Vercy Governance Overlay, and a read-only MCP server over the Vercy model catalogue."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.9"
+dependencies = []
+keywords = ["agent memory", "mcp", "governance", "provenance", "bitemporal", "knowledge graph"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Topic :: Software Development :: Quality Assurance",
+]
+
+[project.urls]
+Homepage = "https://ver.cy/overlay/"
+Source = "https://github.com/ver-cy/vercy-py"
+
+[project.scripts]
+vercy = "vercy.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/vercy"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "tests", "tools", "README.md", "LICENSE", "ENFORCEMENT-CONTRACT.md", "CHANGELOG.md"]

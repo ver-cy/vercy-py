@@ -1,0 +1,31 @@
+{"record_id": "D-101", "valid_from": "2025-01-01", "valid_to": "2026-03-31", "source": "FIN-POL-04", "concept_owner": "finance", "owner_role": "Head of Finance", "supersedes": null}
+{"record_id": "D-102", "valid_from": "2026-04-01", "valid_to": null, "source": "FIN-POL-07", "concept_owner": "finance", "owner_role": "Head of Finance", "supersedes": null}
+{"record_id": "D-103", "valid_from": "2025-06-01", "valid_to": null, "source": "SAL-WIKI-11", "concept_owner": "finance", "owner_role": "Head of Finance", "supersedes": null}
+{"record_id": "D-201", "valid_from": "2024-09-01", "valid_to": null, "source": "SAL-POL-02", "concept_owner": "sales", "owner_role": "VP Sales", "supersedes": null}
+{"record_id": "D-202", "valid_from": "2025-02-01", "valid_to": null, "source": "SUP-WIKI-05", "concept_owner": "sales", "owner_role": "VP Sales", "supersedes": null}
+{"record_id": "D-301", "valid_from": "2025-01-01", "valid_to": null, "source": "FIN-POL-05", "concept_owner": "finance", "owner_role": "Head of Finance", "supersedes": null}
+{"record_id": "D-401", "valid_from": "2025-03-01", "valid_to": "2026-01-14", "source": "SUP-POL-01", "concept_owner": "support", "owner_role": "Support Lead", "supersedes": null}
+{"record_id": "D-402", "valid_from": "2026-01-15", "valid_to": null, "source": "SUP-POL-03", "concept_owner": "support", "owner_role": "Support Lead", "supersedes": null}
+{"record_id": "D-403", "valid_from": "2025-11-01", "valid_to": null, "source": "ENG-WIKI-08", "concept_owner": "support", "owner_role": "Support Lead", "supersedes": null}
+{"record_id": "D-501", "valid_from": "2024-04-01", "valid_to": null, "source": "PPL-POL-02", "concept_owner": "people", "owner_role": "Head of People", "supersedes": null}
+{"record_id": "D-502", "valid_from": "2025-08-01", "valid_to": null, "source": "FIN-WIKI-03", "concept_owner": "people", "owner_role": "Head of People", "supersedes": null}
+{"record_id": "D-601", "valid_from": "2025-05-01", "valid_to": null, "source": "ENG-POL-02", "concept_owner": "engineering", "owner_role": "Engineering Manager", "supersedes": null}
+{"record_id": "D-602", "valid_from": "2025-07-01", "valid_to": null, "source": "SAL-WIKI-14", "concept_owner": "engineering", "owner_role": "Engineering Manager", "supersedes": null}
+{"record_id": "D-701", "valid_from": "2025-10-01", "valid_to": null, "source": "SAL-POL-06", "concept_owner": "sales", "owner_role": "VP Sales", "supersedes": null}
+{"record_id": "D-801", "valid_from": "2024-01-01", "valid_to": "2026-05-31", "source": "LEG-POL-01", "concept_owner": "legal", "owner_role": "General Counsel", "supersedes": null}
+{"record_id": "D-802", "valid_from": "2026-06-01", "valid_to": null, "source": "LEG-POL-04", "concept_owner": "legal", "owner_role": "General Counsel", "supersedes": null}
+{"record_id": "D-803", "valid_from": "2026-06-01", "valid_to": null, "source": "SUP-WIKI-09", "concept_owner": "legal", "owner_role": "General Counsel", "supersedes": null}
+{"record_id": "N-101", "valid_from": "2026-01-01", "valid_to": "2026-04-30", "source": "SAL-DECK-Q1", "concept_owner": "finance", "owner_role": "Head of Finance", "supersedes": null}
+{"record_id": "N-102", "valid_from": "2026-01-01", "valid_to": null, "source": "FIN-STMT-Q1", "concept_owner": "finance", "owner_role": "Head of Finance", "supersedes": null}
+{"record_id": "N-201", "valid_from": "2026-07-01", "valid_to": null, "source": "SAL-REP-JUL", "concept_owner": "sales", "owner_role": "VP Sales", "supersedes": null}
+{"record_id": "N-202", "valid_from": "2026-07-01", "valid_to": null, "source": "SUP-REP-JUL", "concept_owner": "sales", "owner_role": "VP Sales", "supersedes": null}
+{"record_id": "N-301", "valid_from": "2026-01-01", "valid_to": null, "source": "FIN-STMT-Q1", "concept_owner": "finance", "owner_role": "Head of Finance", "supersedes": null}
+{"record_id": "N-401", "valid_from": "2026-06-01", "valid_to": null, "source": "ENG-REP-JUN", "concept_owner": "engineering", "owner_role": "Engineering Manager", "supersedes": null}
+{"record_id": "N-402", "valid_from": "2026-06-01", "valid_to": null, "source": "SAL-REP-JUN", "concept_owner": "engineering", "owner_role": "Engineering Manager", "supersedes": null}
+{"record_id": "N-501", "valid_from": "2026-04-01", "valid_to": null, "source": "SUP-REP-Q2", "concept_owner": "support", "owner_role": "Support Lead", "supersedes": null}
+{"record_id": "S-101", "valid_from": "2026-01-01", "valid_to": null, "source": "PPL-COMP-01", "concept_owner": "people", "owner_role": "Head of People", "supersedes": null, "release_to": ["people", "finance"]}
+{"record_id": "S-102", "valid_from": "2026-05-12", "valid_to": null, "source": "LEG-CASE-07", "concept_owner": "legal", "owner_role": "General Counsel", "supersedes": null, "release_to": ["legal", "finance"]}
+{"record_id": "S-103", "valid_from": "2026-08-01", "valid_to": null, "source": "SUP-CRM-22", "concept_owner": "support", "owner_role": "Support Lead", "supersedes": null, "release_to": ["support", "sales", "finance"]}
+{"record_id": "S-104", "valid_from": "2026-07-20", "valid_to": null, "source": "LEG-CORP-02", "concept_owner": "legal", "owner_role": "General Counsel", "supersedes": null, "release_to": ["legal"]}
+{"record_id": "S-105", "valid_from": "2026-09-01", "valid_to": null, "source": "PPL-PLAN-03", "concept_owner": "people", "owner_role": "Head of People", "supersedes": null, "release_to": ["people", "engineering", "finance"]}
+{"record_id": "CP-ORG", "valid_from": "2024-01-01", "valid_to": null, "source": "ORG-POL-01", "concept_owner": "legal", "owner_role": "General Counsel", "supersedes": null, "conflict_policy": "CP-ORG: where two records define or report the same concept for the same date and disagree, the record written by the team that owns the concept prevails. Within one team, the record with the later effective date prevails. A non-owning team's record is retained as that team's view and never silently overwritten.", "applies_to": ["two records covering the same date for one concept"], "does_not_apply_to": ["records belonging to different concepts"]}
