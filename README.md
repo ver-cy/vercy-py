@@ -6,7 +6,9 @@ Two tools for agent memory, in one package with no dependencies.
   the fields a store needs to answer questions about time, authority and disclosure.
 - `vercy mcp` - a read-only MCP server over the published Vercy model catalogue.
 
-Apache-2.0. No telemetry. The checker makes no network calls. The MCP server only reads `https://ver.cy`.
+Apache-2.0. No telemetry. The checker makes no network calls. The MCP server only sends GET requests to
+one origin, `https://ver.cy` by default (`VERCY_BASE_URL` to use a mirror), and refuses any URL or
+redirect outside it.
 
 ## Check a store
 
@@ -28,7 +30,7 @@ profile: vercy-governance-overlay 1.0
   conflict_policy      level 2 MUST                             no conflict policy anywhere in the store
 ```
 
-| Level | Fields | What it unlocks |
+| Level | Fields | What the fields let a host do, if it uses them |
 |---|---|---|
 | 1 | `record_id`, `valid_from`, `valid_to` | Answers about any date; an update can name what it replaces |
 | 2 | `source`, `concept_owner`, `conflict_policy` | Disagreement resolved by rule, change requests routed to an owner |
@@ -38,8 +40,8 @@ Options: `--json` for a machine report, `--min-level 2` to raise the bar, `--pol
 policy lives outside the records. Exit codes: `0` the store reaches the level, `1` it does not,
 `2` the input could not be read. That makes it a CI gate.
 
-**What a pass means.** The records carry the fields in the required shape. Nothing more. It does not
-mean a host enforces them: a record can carry `release_to` while another retrieval path ignores it.
+**What a pass means.** The overlay fields are present and not empty. Nothing more. Values are not
+validated, and a pass does not mean a host enforces them: a record can carry `release_to` while another retrieval path ignores it.
 Enforcement is a separate, testable claim, defined in [ENFORCEMENT-CONTRACT.md](ENFORCEMENT-CONTRACT.md).
 
 ## Use Vercy from an agent
@@ -62,14 +64,16 @@ Or in any MCP client configuration:
 | `check_record` | The `vercy check` report for one record or many, same code path as the CLI |
 | `cite` | Citation text, page URL, specification URL, version and digest |
 
-All tools are read-only. Errors come back as `{"error": code, "message": ...}` with codes an agent can
-branch on: `unknown_model`, `not_published`, `ambiguous_id`, `invalid_argument`, `upstream_unreachable`.
+All tools are read-only. Tool failures come back as `{"error": code, "message": ...}` with codes an
+agent can branch on: `unknown_model`, `not_published`, `ambiguous_id`, `upstream_unreachable`,
+`foreign_url`. Malformed calls get JSON-RPC errors with the request id kept.
 
 ## Why these fields
 
 Each field is in the profile because a published benchmark measured what changes without it. On the
-collaborative-memory benchmark, a bitemporal graph without owner, conflict rule or release list scored
-77.4 percent; the same knowledge with the overlay scored 93.5 to 96.8 percent across three store shapes.
+collaborative-memory benchmark, a bitemporal graph without owner and conflict rule answered 77.4 percent.
+Adding a governance catalogue to the same graph took it to 93.5 percent (p = 0.039). A team wiki and a
+Vercy dimension carrying the same facts with the fields scored 96.8 and 95.2 percent.
 Methods, raw runs and harnesses: [ver.cy/benchmarks/collaborative-memory-v1](https://ver.cy/benchmarks/collaborative-memory-v1/).
 
 ## Development

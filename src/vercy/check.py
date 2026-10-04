@@ -1,9 +1,9 @@
 """Check a memory store against the Vercy Governance Overlay.
 
 This is the logic published at https://ver.cy/overlay/check.py, kept rule for rule,
-with a structured report around it. A pass means one thing only: the records carry
-the overlay fields in the required shape. It does not mean that a host enforces
-them. See ENFORCEMENT-CONTRACT.md for what enforcement means and how it is tested.
+with a structured report around it. A pass means one thing only: the overlay fields
+are present and not empty. Values are not validated, and a pass does not mean that
+a host enforces them. See ENFORCEMENT-CONTRACT.md for what enforcement means and how it is tested.
 """
 from __future__ import annotations
 
@@ -29,9 +29,9 @@ RESTRICTED_MARKERS = ["release_to", "classification", "confidential", "restricte
 # record is still open, and a store that omits the key cannot say whether it knows.
 NULLABLE = {"valid_to"}
 
-SCOPE = "structure-and-presence"
-SCOPE_NOTE = ("A pass means the records carry the overlay fields in the required shape. "
-              "It does not mean that any host enforces them.")
+SCOPE = "presence"
+SCOPE_NOTE = ("A pass means the overlay fields are present and not empty. "
+              "It does not check their values, and it does not mean that any host enforces them.")
 
 
 class InputError(ValueError):
@@ -44,6 +44,8 @@ def load_records(path: str | Path) -> list[dict[str, Any]]:
         text = Path(path).read_text(encoding="utf-8").strip()
     except OSError as exc:
         raise InputError(f"cannot read {path}: {exc.strerror or exc}") from exc
+    except UnicodeDecodeError as exc:
+        raise InputError(f"{path} is not UTF-8 text") from exc
     return parse_records(text)
 
 

@@ -38,13 +38,38 @@ def base_url() -> str:
     return os.environ.get("VERCY_BASE_URL", "https://ver.cy").rstrip("/")
 
 
-def http_get(url: str, timeout: float = 20.0) -> bytes:
+def _origin(url: str) -> tuple[str, str]:
+    parts = urllib.parse.urlsplit(url)
+    return parts.scheme.lower(), parts.netloc.lower()
+
+
+def same_origin(url: str, base: str) -> bool:
+    """Only the configured base: no file://, no other host, no localhost detours."""
+    scheme, netloc = _origin(url)
+    return scheme in ("https", "http") and (scheme, netloc) == _origin(base)
+
+
+class _SameOriginRedirects(urllib.request.HTTPRedirectHandler):
+    def __init__(self, base: str):
+        self.base = base
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if not same_origin(newurl, self.base):
+            raise CorpusError("foreign_redirect", f"{req.full_url} redirected outside {self.base}")
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+def http_get(url: str, timeout: float = 20.0, base: str | None = None) -> bytes:
+    base = base or base_url()
+    if not same_origin(url, base):
+        raise CorpusError("foreign_url", f"refusing to fetch {url}: outside {base}")
+    opener = urllib.request.build_opener(_SameOriginRedirects(base))
     request = urllib.request.Request(url, headers={
         "User-Agent": f"vercy-py/{__version__}",
         "Accept": "application/json, text/plain, */*",
     })
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
+        with opener.open(request, timeout=timeout) as response:
             return response.read(MAX_SPEC_BYTES + 1)
     except urllib.error.HTTPError as exc:
         raise CorpusError("upstream_http_error", f"{url} answered {exc.code}") from exc
@@ -54,8 +79,8 @@ def http_get(url: str, timeout: float = 20.0) -> bytes:
 
 class Corpus:
     def __init__(self, fetch: Fetcher | None = None, base: str | None = None):
-        self.fetch = fetch or http_get
         self.base = (base or base_url()).rstrip("/")
+        self.fetch = fetch or (lambda url: http_get(url, base=self.base))
         self._index: dict[str, Any] | None = None
 
     def _json(self, path: str) -> Any:
@@ -128,6 +153,8 @@ class Corpus:
         url = model.get("specUrl")
         if not url:
             raise CorpusError("no_specification", f"{model.get('id')} has no specification URL")
+        if not same_origin(url, self.base):
+            raise CorpusError("foreign_url", f"refusing to fetch {url}: outside {self.base}")
         raw = self.fetch(url)
         if len(raw) > MAX_SPEC_BYTES:
             raise CorpusError("spec_too_large", f"{url} is larger than {MAX_SPEC_BYTES} bytes")

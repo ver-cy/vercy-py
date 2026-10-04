@@ -79,20 +79,49 @@ TOOLS: list[dict[str, Any]] = [
 ]
 
 
+class ProtocolError(Exception):
+    """A JSON-RPC level error: the request itself was wrong."""
+
+    def __init__(self, code: int, message: str):
+        super().__init__(message)
+        self.code = code
+        self.message = message
+
+
+PYTYPES = {"string": str, "integer": int, "boolean": bool, "object": dict, "array": list}
+
+
+def _is(value: Any, kind: str) -> bool:
+    if kind == "integer" and isinstance(value, bool):
+        return False
+    return isinstance(value, PYTYPES[kind])
+
+
 def _validate(arguments: dict[str, Any], schema: dict[str, Any]) -> None:
+    """Enough of JSON Schema for these five tools: required, types, bounds, map values."""
     props = schema.get("properties", {})
     for key in schema.get("required", []):
         if key not in arguments:
-            raise CorpusError("invalid_argument", f"missing required argument {key!r}")
+            raise ProtocolError(-32602, f"missing required argument {key!r}")
     for key, value in arguments.items():
-        if key not in props:
-            raise CorpusError("invalid_argument", f"unknown argument {key!r}")
-        expected = props[key].get("type")
+        rule = props.get(key)
+        if rule is None:
+            raise ProtocolError(-32602, f"unknown argument {key!r}")
+        expected = rule.get("type")
         types = expected if isinstance(expected, list) else [expected] if expected else []
-        pytypes = {"string": str, "integer": int, "boolean": bool, "object": dict, "array": list}
-        if types and not any(isinstance(value, pytypes[t]) and not (t == "integer" and isinstance(value, bool))
-                             for t in types):
-            raise CorpusError("invalid_argument", f"{key!r} must be {' or '.join(types)}")
+        if types and not any(_is(value, t) for t in types):
+            raise ProtocolError(-32602, f"{key!r} must be {' or '.join(types)}")
+        if _is(value, "integer"):
+            low, high = rule.get("minimum", value), rule.get("maximum", value)
+            if not low <= value <= high:
+                raise ProtocolError(-32602, f"{key!r} must be between {low} and {high}")
+        if isinstance(value, str) and len(value.strip()) < rule.get("minLength", 0):
+            raise ProtocolError(-32602, f"{key!r} must not be empty")
+        inner = rule.get("additionalProperties")
+        if isinstance(value, dict) and isinstance(inner, dict) and inner.get("type"):
+            bad = [str(k) for k, v in value.items() if not _is(v, inner["type"])]
+            if bad:
+                raise ProtocolError(-32602, f"{key!r} values must be {inner['type']}: {', '.join(bad)}")
 
 
 def _records(value: Any) -> list[dict]:
@@ -115,7 +144,7 @@ class Server:
     def call(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         tool = next((t for t in TOOLS if t["name"] == name), None)
         if tool is None:
-            raise CorpusError("unknown_tool", f"unknown tool {name!r}")
+            raise ProtocolError(-32602, f"unknown tool {name!r}")
         _validate(arguments, tool["inputSchema"])
         if name == "search_models":
             return self.corpus.search(arguments["query"], arguments.get("limit", 8))
@@ -129,41 +158,55 @@ class Server:
                          int(arguments.get("min_level", 1)))
         return self.corpus.cite(arguments["id"])
 
-    def handle(self, request: dict[str, Any]) -> dict[str, Any] | None:
+    def handle(self, request: Any) -> dict[str, Any] | None:
+        if not isinstance(request, dict):
+            return _error(None, -32600, "invalid request")
         request_id = request.get("id")
-        method = request.get("method")
-        if request_id is None:          # a notification, nothing to answer
+        if request.get("jsonrpc") != "2.0" or not isinstance(request.get("method"), str):
+            return _error(request_id, -32600, "invalid request")
+        if "id" not in request:          # a notification, nothing to answer
             return None
+        params = request.get("params", {})
+        if not isinstance(params, dict):
+            return _error(request_id, -32602, "params must be an object")
+        try:
+            return _result(request_id, self._dispatch(request["method"], params))
+        except ProtocolError as exc:
+            return _error(request_id, exc.code, exc.message)
+        except Exception as exc:  # never lose the id: the client is waiting for this answer
+            return _error(request_id, -32603, f"internal error: {type(exc).__name__}")
+
+    def _dispatch(self, method: str, params: dict[str, Any]) -> dict[str, Any]:
         if method == "initialize":
-            asked = (request.get("params") or {}).get("protocolVersion")
+            asked = params.get("protocolVersion")
+            if not isinstance(asked, str):
+                raise ProtocolError(-32602, "initialize needs protocolVersion")
             version = asked if asked in SUPPORTED_PROTOCOLS else PROTOCOL
-            return _result(request_id, {
+            return {
                 "protocolVersion": version,
                 "capabilities": {"tools": {"listChanged": False}},
                 "serverInfo": {"name": "vercy", "title": "Vercy", "version": __version__},
                 "instructions": "Read-only access to the Vercy model catalogue and the Governance "
                                 "Overlay. Cite what you use with the cite tool.",
-            })
+            }
         if method == "ping":
-            return _result(request_id, {})
+            return {}
         if method == "tools/list":
-            return _result(request_id, {"tools": TOOLS})
+            return {"tools": TOOLS}
         if method == "tools/call":
-            params = request.get("params") or {}
-            arguments = params.get("arguments") or {}
-            if not isinstance(params, dict) or not isinstance(arguments, dict):
-                return _error(request_id, -32602, "invalid tools/call parameters")
+            arguments = params.get("arguments", {})
+            if not isinstance(arguments, dict) or not isinstance(params.get("name"), str):
+                raise ProtocolError(-32602, "tools/call needs a name and object arguments")
             try:
-                payload = self.call(str(params.get("name")), arguments)
-                is_error = False
-            except CorpusError as exc:
+                payload, is_error = self.call(params["name"], arguments), False
+            except CorpusError as exc:          # a tool-level failure the agent can act on
                 payload, is_error = exc.as_dict(), True
-            return _result(request_id, {
+            return {
                 "content": [{"type": "text", "text": json.dumps(payload, ensure_ascii=False, indent=1)}],
                 "structuredContent": payload,
                 "isError": is_error,
-            })
-        return _error(request_id, -32601, f"method not found: {method}")
+            }
+        raise ProtocolError(-32601, f"method not found: {method}")
 
 
 def _result(request_id: Any, result: Any) -> dict[str, Any]:
@@ -186,9 +229,11 @@ def serve(stdin: TextIO | None = None, stdout: TextIO | None = None, server: Ser
         if not line.strip():
             continue
         try:
-            response = server.handle(json.loads(line))
-        except Exception as exc:  # protocol boundary: answer with an error, never crash
-            response = _error(None, -32700, f"invalid request: {exc}")
+            message = json.loads(line)
+        except ValueError:
+            response = _error(None, -32700, "parse error")
+        else:
+            response = server.handle(message)
         if response is not None:
             stdout.write(json.dumps(response, ensure_ascii=False, separators=(",", ":")) + "\n")
             stdout.flush()

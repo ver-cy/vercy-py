@@ -94,7 +94,7 @@ class CheckerParity(unittest.TestCase):
 
     def test_report_states_its_scope(self):
         report = check(load_records(FIX / "fixture-overlay.jsonl"))
-        self.assertEqual(report["scope"], "structure-and-presence")
+        self.assertEqual(report["scope"], "presence")
         self.assertEqual(report["profile_version"], "1.0")
 
 
@@ -109,10 +109,13 @@ class Cli(unittest.TestCase):
     def test_unreadable_input_is_exit_2(self):
         with tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False) as f:
             f.write("{not json\n")
+        with tempfile.NamedTemporaryFile("wb", suffix=".jsonl", delete=False) as g:
+            g.write(b'{"record_id": "\xff\xfe"}\n')
         old = sys.stderr
         sys.stderr = io.StringIO()
         try:
             self.assertEqual(run_cli("check", f.name)[0], 2)
+            self.assertEqual(run_cli("check", g.name)[0], 2)
             self.assertEqual(run_cli("check", f.name + ".missing")[0], 2)
         finally:
             sys.stderr = old
@@ -170,10 +173,55 @@ class Mcp(unittest.TestCase):
         self.assertEqual(self.tool("resolve_model", id="vr.nope")[1]["error"], "unknown_model")
         self.assertEqual(self.tool("resolve_model", id="WM-ACT-022")[1]["error"], "not_published")
         self.assertEqual(self.tool("resolve_model", id="Shared")[1]["error"], "ambiguous_id")
-        self.assertEqual(self.tool("resolve_model")[1]["error"], "invalid_argument")
-        self.assertEqual(self.tool("resolve_model", id="x", extra=1)[1]["error"], "invalid_argument")
-        self.assertEqual(self.tool("nope")[1]["error"], "unknown_tool")
         self.assertEqual(self.rpc("nope")["error"]["code"], -32601)
+
+    def call_error(self, name, **arguments):
+        return self.rpc("tools/call", {"name": name, "arguments": arguments}, rid=7)
+
+    def test_bad_calls_are_protocol_errors_that_keep_the_id(self):
+        for reply in (self.call_error("resolve_model"),
+                      self.call_error("resolve_model", id="x", extra=1),
+                      self.call_error("nope"),
+                      self.call_error("check_record", records=[{}], min_level=0),
+                      self.call_error("check_record", records=[{}], map={"record_id": 5}),
+                      self.call_error("search_models", query="   "),
+                      self.rpc("tools/call", [1], rid=7)):
+            self.assertEqual(reply["id"], 7)
+            self.assertEqual(reply["error"]["code"], -32602, reply)
+        self.assertEqual(self.server.handle({"jsonrpc": "2.0", "id": 9})["error"]["code"], -32600)
+        self.assertEqual(self.server.handle([1, 2])["error"]["code"], -32600)
+        self.assertEqual(self.rpc("initialize", {})["error"]["code"], -32602)
+
+    def test_internal_failure_keeps_the_id(self):
+        def broken(url):
+            if url.endswith("runtime-index.json"):
+                return b'{"models": [1, 2]}'
+            return fake_fetch(url)
+        server = Server(Corpus(fetch=broken, base="https://ver.cy"))
+        reply = server.handle({"jsonrpc": "2.0", "id": 11, "method": "tools/call",
+                               "params": {"name": "cite", "arguments": {"id": "x"}}})
+        self.assertEqual(reply["id"], 11)
+        self.assertEqual(reply["error"]["code"], -32603)
+
+    def test_only_the_base_origin_is_ever_fetched(self):
+        from vercy.corpus import same_origin, http_get
+        base = "https://ver.cy"
+        self.assertTrue(same_origin("https://ver.cy/models/x/spec.yaml", base))
+        for url in ("file:///etc/passwd", "file:///C:/Windows/win.ini", "http://ver.cy/x",
+                    "https://ver.cy.evil.example/x", "http://127.0.0.1:8080/x", "https://localhost/x"):
+            self.assertFalse(same_origin(url, base), url)
+            with self.assertRaises(CorpusError):
+                http_get(url, base=base)
+        poisoned = {"models": [{**INDEX["models"][0], "specUrl": "file:///etc/passwd"}]}
+        seen = []
+
+        def fetch(url):
+            seen.append(url)
+            return json.dumps(poisoned).encode()
+        with self.assertRaises(CorpusError) as ctx:
+            Corpus(fetch=fetch, base=base).resolve("vr.wm-org-001", include_spec=True)
+        self.assertEqual(ctx.exception.code, "foreign_url")
+        self.assertFalse(any(u.startswith("file:") for u in seen))
 
     def test_check_record_agrees_with_cli(self):
         text = (FIX / "fixture-graph.jsonl").read_text(encoding="utf-8")
