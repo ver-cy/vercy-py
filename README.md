@@ -40,7 +40,8 @@ Options: `--json` for a machine report, `--min-level 2` to raise the bar, `--pol
 policy lives outside the records. Exit codes: `0` the store reaches the level, `1` it does not,
 `2` the input could not be read. That makes it a CI gate.
 
-**What a pass means.** The overlay fields are present and not empty. Nothing more. Values are not
+**What a pass means.** The overlay fields are present and not empty (`valid_to` only has to be
+present: null means still open). Nothing more. Values are not
 validated, and a pass does not mean a host enforces them: a record can carry `release_to` while another retrieval path ignores it.
 Enforcement is a separate, testable claim, defined in [ENFORCEMENT-CONTRACT.md](ENFORCEMENT-CONTRACT.md).
 

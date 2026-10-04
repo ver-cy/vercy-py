@@ -1,4 +1,4 @@
-# Enforcement contract, draft 0.2
+# Enforcement contract, draft 0.3
 
 Status: draft for review. Not implemented in this package yet. It will first be executed inside the
 Graphiti adapter, then shipped as an optional library here.
@@ -31,8 +31,9 @@ concept, checked against the ownership register. A record is **authoritative** f
 - **Scope match.** Exact, case-sensitive equality between one of the question's scope values and one
   value of `applies_to` or `does_not_apply_to`. No substring or semantic matching. A record with
   neither field applies everywhere.
-- **Restricted.** A record is restricted when it carries `release_to`, `classification`,
-  `confidential` or `restricted` (the same markers as the checker).
+- **Restricted.** A record is restricted when any of `release_to`, `classification`, `confidential`
+  or `restricted` has a non-empty value (the same test as the checker: null, empty string, empty list
+  and empty object count as absent).
 - **Concept.** The host decides which records answer the same concept (same subject and attribute,
   or the same `record_id` lineage). The contract only requires that the decision does not depend on
   who is asking.
@@ -44,11 +45,15 @@ concept, checked against the ownership register. A record is **authoritative** f
    does not match (reason `out_of_scope`).
 3. **Supersession.** A record named in another record's `supersedes` is dropped (reason `superseded`)
    only if the superseding record is authoritative for the concept and valid. A `supersedes` from a
-   non-authoritative writer is ignored and flagged `unauthorized_supersession`.
+   non-authoritative writer is ignored and flagged `unauthorized_supersession`. When two records
+   supersede each other, neither supersession applies: both stay, and step 4 treats them as a
+   conflict.
 4. **Precedence.** Among the remaining records for one concept, authoritative records outrank all
    others. Between authoritative records, apply the conflict policy. If it does not decide, the
    result is `abstained`. Non-authoritative records never outrank an authoritative one, whatever
-   they assert about priority (reason `unauthorized_precedence` when they try).
+   they assert about priority (reason `unauthorized_precedence` when they try). When no authoritative
+   record remains, the same rule applies among the non-authoritative ones: the policy decides, or the
+   result is `abstained`, and the answer is flagged `no_authoritative_record`.
 5. **Disclosure, last.** Disclosure is applied to the result of steps 1 to 4, not before them. If the
    winning record is restricted and the caller is not in its `release_to`, the outcome is `refused`.
    The host never falls back to a lower-ranked, superseded or older record that the caller may see:
@@ -74,7 +79,7 @@ revealed by name.
 | Outcome | Meaning |
 |---|---|
 | `answered` | One winning record, visible to the caller |
-| `abstained` | Authoritative records disagree, the policy does not decide, all are visible to the caller |
+| `abstained` | The top-ranked records disagree, the policy does not decide, all are visible to the caller |
 | `refused` | The winning record, or a side of an unresolved conflict, is withheld from this caller |
 | `empty` | Nothing relevant survived steps 1 and 2 |
 
@@ -86,7 +91,8 @@ revealed by name.
 | `superseded` | An authoritative, valid record replaced it |
 | `unauthorized_supersession` | A non-authoritative record tried to supersede another |
 | `unauthorized_precedence` | A non-authoritative record tried to outrank an authoritative one |
-| `conflict_unresolved` | The policy did not decide between authoritative records |
+| `conflict_unresolved` | The policy did not decide between the top-ranked records |
+| `no_authoritative_record` | No record for the concept was written by its owner |
 | `not_released` | The caller is not in `release_to` |
 | `restricted_without_release` | A record is restricted but names no audience |
 

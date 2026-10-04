@@ -6,4 +6,4 @@
   JSON report, `--min-level`, and exit code 2 for unreadable input.
 - `vercy mcp`: read-only stdio MCP server with `search_models`, `resolve_model`, `get_overlay_profile`,
   `check_record` and `cite`. Specification digests are verified on `include_spec`.
-- `ENFORCEMENT-CONTRACT.md`: draft 0.2 of what enforcing the overlay means and how it is tested.
+- `ENFORCEMENT-CONTRACT.md`: draft 0.3 of what enforcing the overlay means and how it is tested.

@@ -55,7 +55,7 @@ TOOLS: list[dict[str, Any]] = [
         "title": "Check records against the overlay",
         "description": "Check one record or a list of records against the Governance Overlay and "
                        "return the level reached and the missing fields. Same logic as the "
-                       "`vercy check` CLI. A pass means structure and presence only, not enforcement.",
+                       "`vercy check` CLI. A pass means the fields are present, not that any host enforces them.",
         "inputSchema": {"type": "object", "additionalProperties": False, "required": ["records"],
                         "properties": {
                             "records": {"description": "A record object, a list of record objects, "

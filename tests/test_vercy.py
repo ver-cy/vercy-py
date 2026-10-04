@@ -239,7 +239,8 @@ class Mcp(unittest.TestCase):
 
     def test_stdio_framing(self):
         lines = "\n".join(json.dumps(m) for m in [
-            {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}},
+            {"jsonrpc": "2.0", "id": 1, "method": "initialize",
+             "params": {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "t", "version": "0"}}},
             {"jsonrpc": "2.0", "method": "notifications/initialized"},
             {"jsonrpc": "2.0", "id": 2, "method": "tools/list"},
         ]) + "\nnot json\n"
@@ -247,6 +248,7 @@ class Mcp(unittest.TestCase):
         serve(io.StringIO(lines), out, self.server)
         replies = [json.loads(l) for l in out.getvalue().splitlines()]
         self.assertEqual([r.get("id") for r in replies], [1, 2, None])
+        self.assertEqual(replies[0]["result"]["protocolVersion"], "2025-06-18")
         self.assertEqual(replies[2]["error"]["code"], -32700)
 
 

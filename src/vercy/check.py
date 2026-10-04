@@ -2,7 +2,8 @@
 
 This is the logic published at https://ver.cy/overlay/check.py, kept rule for rule,
 with a structured report around it. A pass means one thing only: the overlay fields
-are present and not empty. Values are not validated, and a pass does not mean that
+are present and not empty, except valid_to, which only has to be present (null means
+the record is still open). Values are not validated, and a pass does not mean that
 a host enforces them. See ENFORCEMENT-CONTRACT.md for what enforcement means and how it is tested.
 """
 from __future__ import annotations
@@ -30,7 +31,7 @@ RESTRICTED_MARKERS = ["release_to", "classification", "confidential", "restricte
 NULLABLE = {"valid_to"}
 
 SCOPE = "presence"
-SCOPE_NOTE = ("A pass means the overlay fields are present and not empty. "
+SCOPE_NOTE = ("A pass means the overlay fields are present and not empty (valid_to only needs to be present). "
               "It does not check their values, and it does not mean that any host enforces them.")
 
 
