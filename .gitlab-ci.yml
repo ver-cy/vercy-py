@@ -14,7 +14,7 @@ test-windows:
   tags: [saas-windows-medium-amd64]
   allow_failure: true          # shared Windows runners are beta and sometimes queue for long
   script:
-    - choco install python --version=3.12.7 -y --no-progress
+    - choco install python312 -y --no-progress
     - $env:PATH = "C:\Python312;C:\Python312\Scripts;" + $env:PATH
     - python -m unittest discover -s tests -v
 
