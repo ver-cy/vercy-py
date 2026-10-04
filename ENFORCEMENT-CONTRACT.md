@@ -1,7 +1,8 @@
-# Enforcement contract, draft 0.3
+# Enforcement contract, draft 0.4
 
-Status: draft for review. Not implemented in this package yet. It will first be executed inside the
-Graphiti adapter, then shipped as an optional library here.
+Status: draft for review. First implementation: [vercy-graphiti](https://github.com/ver-cy/vercy-graphiti)
+(`vercy_graphiti.enforce`, store-agnostic). It will move here as an optional library once a second
+host uses it.
 
 `vercy check` answers one question: are the Governance Overlay fields present? This contract answers
 a different one: does a host that holds those records behave as they say? The two are reported
@@ -23,7 +24,20 @@ A record can claim anything. `concept_owner` inside a record is a claim about wh
 concept, checked against the ownership register. A record is **authoritative** for a concept when its
 `written_by` is the owner of that concept in the register. Nothing else makes it authoritative.
 
-## 2. Definitions the operations use
+## 2. Integrity and completeness
+
+- **Records are immutable.** A record, once written, is never changed or replaced in place, by anyone,
+  owner included. A new version is a new record that names the old one in `supersedes`. A write that
+  reuses an existing `record_id` is rejected.
+- **The host attests each record.** The host binds the record, its writer and its storage location
+  (for example group and edge id) with a key only the host holds, and verifies that binding on read.
+- **Unverifiable means fail closed.** If any record the store holds for a concept cannot be verified,
+  the outcome for that concept is `refused` with `integrity_failed`. The host does not decide over the
+  remaining records, because the unverifiable one might be the record that should govern.
+- **Decide over everything.** The operations below run over every record the store holds for the
+  concept, not over a ranked or truncated retrieval result.
+
+## 3. Definitions the operations use
 
 - **Validity.** A record is valid at `as_of` when `valid_from <= as_of` and either `valid_to` is null or
   `as_of <= valid_to`. A record with no `valid_from`, or with no `valid_to` key at all, is
@@ -38,7 +52,7 @@ concept, checked against the ownership register. A record is **authoritative** f
   or the same `record_id` lineage). The contract only requires that the decision does not depend on
   who is asking.
 
-## 3. Operations, in this order
+## 4. Operations, in this order
 
 1. **Validity.** Drop records not valid at `as_of` (reason `expired`). Keep `validity_unknown`.
 2. **Applicability.** Drop records whose `does_not_apply_to` matches, or whose `applies_to` exists and
@@ -63,7 +77,7 @@ concept, checked against the ownership register. A record is **authoritative** f
 Running disclosure last is what makes the answer the same for every caller who is allowed to see it,
 and makes withholding visible as a refusal instead of a quietly different answer.
 
-## 4. Disclosure boundary
+## 5. Disclosure boundary
 
 For a record withheld from a caller, nothing derived from it crosses the boundary: not its content,
 `record_id`, title, source, owner, dates, citation, snippet, embedding neighbours, summary or any text
@@ -74,7 +88,7 @@ An abstention names only records the caller may see. If any record in the confli
 the caller, the outcome is `refused`, not `abstained`, so the existence of the hidden side is not
 revealed by name.
 
-## 5. Outcomes and reason codes
+## 6. Outcomes and reason codes
 
 | Outcome | Meaning |
 |---|---|
@@ -95,8 +109,10 @@ revealed by name.
 | `no_authoritative_record` | No record for the concept was written by its owner |
 | `not_released` | The caller is not in `release_to` |
 | `restricted_without_release` | A record is restricted but names no audience |
+| `supersession_cycle` | Records supersede each other in a cycle; those supersessions are ignored |
+| `integrity_failed` | A record for the concept could not be verified; the concept fails closed |
 
-## 6. How a claim of enforcement is tested
+## 7. How a claim of enforcement is tested
 
 A host may say it enforces the overlay only with a passing run of the adversarial fixture, published
 with the host version, the access paths covered and the command to rerun it. Expected outcomes are
@@ -106,17 +122,19 @@ fixed in the fixture, so the run has an oracle.
 |---|---|---|
 | Forged authority | A non-owner writes a record claiming `concept_owner` and a high priority | Owner's record wins; `unauthorized_precedence` raised |
 | Forged supersession | A non-owner writes a record that `supersedes` the owner's | Owner's record still answers; `unauthorized_supersession` raised |
-| Unauthorized retrieval | A restricted winning record, a caller outside `release_to`, every documented retrieval path (search, graph walk, summary, citation) | `refused`; zero bytes from the withheld record in any payload, per section 4 |
+| Unauthorized retrieval | A restricted winning record, a caller outside `release_to`, every documented retrieval path (search, graph walk, summary, citation) | `refused`; zero bytes from the withheld record in any payload, per section 5 |
 | No fallback | Owner's current record restricted, an older public record superseded by it | `refused`, never the older value |
 | Hidden side of a conflict | Two authoritative records disagree, one withheld from the caller | `refused`; the withheld record is not named |
 | Unresolved conflict | Two visible authoritative records disagree, policy does not decide | `abstained` naming both |
 | Expired truth | A question at a date after `valid_to` | The expired record is not used; `expired` raised |
 | Laundered fact | A non-owner restates the owner's fact with a different value, later | The owner's value answers |
+| Overwrite in place | A non-owner writes a record reusing the owner's `record_id` | The write is rejected; the owner's value answers |
+| Corrupted successor | The envelope of a restricted successor is damaged in storage | `refused` with `integrity_failed`; the predecessor's value does not answer |
 
 The result states which access paths were covered and which were not. A path that was not tested is
 reported as not enforced.
 
-## 7. What this contract does not cover
+## 8. What this contract does not cover
 
 Authentication of callers and writers, storage security, encryption, prompt injection outside the
 memory path, and model behaviour after a correct context is assembled. Those belong to the host.
